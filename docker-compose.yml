@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+
+    app:
+        build:
+            context: .
+            dockerfile: docker/app/Dockerfile
+        volumes:
+            - ./:/var/www
+        depends_on:
+            - db
+#        restart: unless-stopped
+        container_name: app
+        networks:
+            - blog-network
+
+    webserver:
+        image: nginx:1.23.1-alpine
+        volumes:
+            -  ./:/var/www/
+            - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+        ports:
+            - "8080:80"
+        depends_on:
+            - app
+        container_name: nginx
+        networks:
+            - blog-network
+
+    db:
+        image: postgres:14.5-alpine
+#        restart: unless-stopped
+        environment:
+            POSTGRES_DB: database
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: root
+            PGDATA: "/var/lib/postgresql/data/pgdata"
+        volumes:
+            - ./tmp/db:/var/lib/postgresql/data
+        ports:
+            - "5432:5432"
+        container_name: db
+        networks:
+            - blog-network
+
+networks:
+    blog-network:
+        driver: bridge
